@@ -22,6 +22,9 @@ export default function App() {
   // Wazuh SOC 底部事件抽屜展開/收合狀態 (預設展開)
   const [isLogCollapsed, setIsLogCollapsed] = useState(false);
 
+  // 自由搏鬥模式 (Cloudflare Workers AI 現場出題、見招拆招)
+  const [isFreeformMode, setIsFreeformMode] = useState(true);
+
   // 觀戰模式控制狀態 (AI vs AI 白隊裁判)
   const [currentTurnSide, setCurrentTurnSide] = useState('red'); // 'red' | 'blue'
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -89,7 +92,7 @@ export default function App() {
         {
           time: new Date().toLocaleTimeString('zh-TW', { hour12: false }),
           tag: 'REFEREE',
-          message: '👁️ 白隊總裁判長進駐戰情室！Cloudflare Workers AI 邊緣雙 Agent 全自動攻防正式開戰！',
+          message: `👁️ 白隊總裁判長進駐戰情室！Cloudflare Workers AI 雙 Agent 【${isFreeformMode ? '⚡ AI 自由出題搏鬥模式' : '🃏 經典卡牌庫模式'}】開戰！`,
           type: 'dance'
         }
       ]);
@@ -239,7 +242,7 @@ export default function App() {
     }, 700);
   };
 
-  // 觀戰模式核心：執行單一步驟回合 (AI vs AI Spectator Turn)
+  // 觀戰模式核心：執行單一步驟回合 (AI vs AI Spectator Turn - 支援自由搏鬥出題)
   const executeSpectatorTurn = async () => {
     if (isExecutingTurnRef.current || winner || activeDanceEvent || !gameStarted || gameMode !== 'spectator') {
       return;
@@ -248,9 +251,9 @@ export default function App() {
 
     try {
       if (currentTurnSide === 'red') {
-        // 紅隊回合
+        // 紅隊回合：現場出題或手牌出牌
         let currentHand = playerHand;
-        if (currentHand.length === 0) {
+        if (!isFreeformMode && currentHand.length === 0) {
           const drawn = getRandomCards(RED_CARDS, 1);
           currentHand = drawn;
           setPlayerHand(drawn);
@@ -259,6 +262,8 @@ export default function App() {
         const decision = await getAIDecision({
           playerSide: 'spectator',
           actingSide: 'red',
+          isFreeform: isFreeformMode,
+          lastAction: lastPlayedCard,
           actingHand: currentHand,
           corpHP,
           breachProgress,
@@ -271,18 +276,29 @@ export default function App() {
         const cardToPlay = (decision && decision.card) ? decision.card : currentHand[0];
         if (decision && decision.engine) setAiEngineName(decision.engine);
 
-        addLog('AI-RED', `[${decision?.engine || 'Cloudflare AI'}] ${decision?.tacticalReason || '執行滲透攻擊'}`, 'attack');
+        if (isFreeformMode && cardToPlay?.isAIGenerated) {
+          addLog('AI-RED', `[✨ AI 現場出題] ${cardToPlay.name} - ${decision?.tacticalReason || cardToPlay.description}`, 'attack');
+        } else {
+          addLog('AI-RED', `[${decision?.engine || 'Cloudflare AI'}] ${decision?.tacticalReason || '執行滲透攻擊'}`, 'attack');
+        }
+
         if (decision?.banter) {
           addLog('TRASH-TALK', `💬 紅隊嗆聲：「${decision.banter}」`, 'attack');
         }
 
         executeCardEffect(cardToPlay, true);
-        setPlayerHand((prev) => prev.filter((c) => c !== cardToPlay));
+
+        if (isFreeformMode) {
+          setPlayerHand([cardToPlay]);
+        } else {
+          setPlayerHand((prev) => prev.filter((c) => c !== cardToPlay));
+        }
+
         setCurrentTurnSide('blue');
       } else {
-        // 藍隊回合
+        // 藍隊回合：現場見招拆招或手牌防禦
         let currentHand = opponentHand;
-        if (currentHand.length === 0) {
+        if (!isFreeformMode && currentHand.length === 0) {
           const drawn = getRandomCards(BLUE_CARDS, 1);
           currentHand = drawn;
           setOpponentHand(drawn);
@@ -291,6 +307,8 @@ export default function App() {
         const decision = await getAIDecision({
           playerSide: 'spectator',
           actingSide: 'blue',
+          isFreeform: isFreeformMode,
+          lastAction: lastPlayedCard,
           actingHand: currentHand,
           corpHP,
           breachProgress,
@@ -303,18 +321,30 @@ export default function App() {
         const cardToPlay = (decision && decision.card) ? decision.card : currentHand[0];
         if (decision && decision.engine) setAiEngineName(decision.engine);
 
-        addLog('AI-BLUE', `[${decision?.engine || 'Cloudflare AI'}] ${decision?.tacticalReason || '部署防線加固'}`, 'defense');
+        if (isFreeformMode && cardToPlay?.isAIGenerated) {
+          addLog('AI-BLUE', `[✨ AI 見招拆招] ${cardToPlay.name} - ${decision?.tacticalReason || cardToPlay.description}`, 'defense');
+        } else {
+          addLog('AI-BLUE', `[${decision?.engine || 'Cloudflare AI'}] ${decision?.tacticalReason || '部署防線加固'}`, 'defense');
+        }
+
         if (decision?.banter) {
           addLog('TRASH-TALK', `💬 藍隊回敬：「${decision.banter}」`, 'defense');
         }
 
         executeCardEffect(cardToPlay, false);
-        setOpponentHand((prev) => prev.filter((c) => c !== cardToPlay));
 
-        // 藍隊出完牌後回合推進：回合數加 1，雙方補 1 張牌
+        if (isFreeformMode) {
+          setOpponentHand([cardToPlay]);
+        } else {
+          setOpponentHand((prev) => prev.filter((c) => c !== cardToPlay));
+        }
+
+        // 回合推進
         setRounds((prev) => prev + 1);
-        setPlayerHand((prev) => [...prev, ...getRandomCards(RED_CARDS, 1)]);
-        setOpponentHand((prev) => [...prev, ...getRandomCards(BLUE_CARDS, 1)]);
+        if (!isFreeformMode) {
+          setPlayerHand((prev) => [...prev, ...getRandomCards(RED_CARDS, 1)]);
+          setOpponentHand((prev) => [...prev, ...getRandomCards(BLUE_CARDS, 1)]);
+        }
         setCurrentTurnSide('red');
       }
     } catch (err) {
@@ -402,6 +432,9 @@ export default function App() {
         } else if (e.key === 'd' || e.key === 'D') {
           e.preventDefault();
           handleForceDanceStudio();
+        } else if (e.key === 'f' || e.key === 'F') {
+          e.preventDefault();
+          setIsFreeformMode((prev) => !prev);
         }
         return;
       }
@@ -556,6 +589,7 @@ export default function App() {
                 <>
                   <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">Space 播放/暫停</span>
                   <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">N 單步推進</span>
+                  <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">F 自由搏鬥</span>
                   <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">D 強制尬舞</span>
                   <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">L 收合日誌</span>
                 </>
@@ -628,6 +662,8 @@ export default function App() {
                 onToggleSpeed={() => setSpectatorSpeed((prev) => (prev === 1 ? 2 : 1))}
                 onForceDanceStudio={handleForceDanceStudio}
                 currentTurnSide={currentTurnSide}
+                isFreeform={isFreeformMode}
+                onToggleFreeform={() => setIsFreeformMode((prev) => !prev)}
               />
             </div>
           )}

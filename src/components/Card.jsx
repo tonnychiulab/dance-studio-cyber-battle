@@ -81,12 +81,19 @@ export default function Card({ card, onPlay, canPlay, isOpponent = false, status
     >
       {/* 頂部：MITRE ATT&CK 標籤與消耗費用 */}
       <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border shadow-sm ${badgeStyle}`}>
-            {card.mitre}
-          </span>
+        <div className="flex items-center justify-between mb-1.5 gap-1">
+          <div className="flex items-center gap-1 overflow-hidden">
+            <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border shadow-sm truncate ${badgeStyle}`}>
+              {card.mitre}
+            </span>
+            {card.isAIGenerated && (
+              <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-purple-950/60 text-purple-300 border border-purple-500/50 font-bold flex items-center gap-0.5 shrink-0 animate-pulse">
+                <Sparkles className="size-2 text-amber-300" /> AI 出題
+              </span>
+            )}
+          </div>
 
-          <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-bold border transition-colors ${
+          <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-bold border transition-colors shrink-0 ${
             canPlay
               ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-[0_0_8px_rgba(251,191,36,0.25)]'
               : 'bg-slate-800/50 text-slate-500 border-slate-700/50'

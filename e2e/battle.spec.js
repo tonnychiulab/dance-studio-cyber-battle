@@ -153,4 +153,38 @@ test.describe('「要打去練舞室打」全功能端到端 (E2E) 測試', () =
     await expect(collapseBtn).toBeVisible();
   });
 
+  test('自由搏鬥模式：AI 現場出題、見招拆招與模式切換', async ({ page }) => {
+    await page.goto('/');
+
+    // 進入白隊總裁判觀戰席
+    await page.getByText('👁️ 白隊總裁判 (全自動)').click();
+    await page.getByRole('button', { name: /開啟白隊總裁判觀戰席/ }).click();
+
+    // 驗證處於自由搏鬥按鈕
+    const freeformBtn = page.getByRole('button', { name: /自由搏鬥/ });
+    await expect(freeformBtn).toBeVisible();
+
+    // 暫停自動戰鬥以便逐步驗證
+    const pauseBtn = page.getByRole('button', { name: /暫停自動對戰/ });
+    if (await pauseBtn.isVisible()) {
+      await pauseBtn.click();
+    }
+
+    // 點擊單步推進，觸發紅隊 AI 現場自創出題
+    const stepBtn = page.getByRole('button', { name: /單步推進下一回合/ });
+    await stepBtn.click();
+
+    // 驗證終端機 Log 出現 AI 現場出題紀錄
+    const terminal = page.locator('aside');
+    await expect(terminal).toContainText('AI 現場出題');
+
+    // 再次點擊單步推進，觸發藍隊 AI 現場見招拆招
+    await stepBtn.click();
+    await expect(terminal).toContainText('AI 見招拆招');
+
+    // 測試按鈕切換回經典卡牌庫模式
+    await freeformBtn.click();
+    await expect(page.getByRole('button', { name: /經典卡牌庫/ })).toBeVisible();
+  });
+
 });

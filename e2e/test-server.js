@@ -17,6 +17,50 @@ export function startTestServer(port = 5173) {
           try {
             const data = JSON.parse(body);
             const side = data.actingSide || (data.playerSide === 'red' ? 'blue' : 'red');
+
+            if (data.isFreeform) {
+              const genCard = side === 'red' ? {
+                id: `ai_gen_test_${Date.now()}`,
+                name: 'E2E 現場出題：MCP 提示注入穿透',
+                side: 'red',
+                mitre: 'T1059.AI',
+                cost: 2,
+                type: 'attack',
+                attack: 26,
+                defense: 0,
+                reduceBreach: 0,
+                danceCharge: 20,
+                description: 'E2E 測試：AI 現場即時自創之尖端滲透攻擊！',
+                flavor: '「大至急！這招你防得住嗎？」',
+                isAIGenerated: true
+              } : {
+                id: `ai_gen_test_${Date.now()}`,
+                name: 'E2E 見招拆招：高市流全域關站隔離',
+                side: 'blue',
+                mitre: 'Def-Shutdown',
+                cost: 2,
+                type: 'defense',
+                attack: 0,
+                defense: 25,
+                reduceBreach: 22,
+                danceCharge: 20,
+                description: 'E2E 測試：AI 現場即時見招拆招之防禦卡牌！',
+                flavor: '「全域拔線，立於不敗之地！」',
+                isAIGenerated: true
+              };
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                success: true,
+                isFreeform: true,
+                decision: {
+                  card: genCard,
+                  tacticalReason: side === 'red' ? 'E2E 自由出題：突破防線' : 'E2E 自由出題：見招拆招',
+                  banter: '自由搏鬥全面啟動！'
+                }
+              }));
+              return;
+            }
+
             const hand = data.actingHand || data.opponentHand || [];
             const chosen = hand[0] || null;
             res.writeHead(200, { 'Content-Type': 'application/json' });
