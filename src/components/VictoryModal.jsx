@@ -20,9 +20,16 @@ export default function VictoryModal({ winner, playerSide, rounds, onRestart }) 
   const shareText = `【要打去練舞室打之紅藍對抗篇】\n我扮演了 ${playerSide === 'red' ? '🔴紅隊' : '🔵藍隊'}，在第 ${rounds} 回合終局對決中${isPlayerWinner ? '贏得勝利' : '完成演練'}！\n紫隊成熟度鑑定：S-Rank 卓越！\n快來開瀏覽器挑戰：https://dance-studio-battle.pages.dev`;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(shareText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareText)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch(() => {
+          // 靜默降級處理沙箱或非 HTTPS 環境限制
+        });
+    }
   };
 
   return (

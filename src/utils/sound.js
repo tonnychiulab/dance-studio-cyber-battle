@@ -26,6 +26,17 @@ class SoundEngine {
     this.muted = muted;
   }
 
+  _connectAndAutoCleanup(osc, gain) {
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch {}
+    };
+  }
+
   playCard() {
     if (this.muted) return;
     try {
@@ -43,8 +54,7 @@ class SoundEngine {
       gain.gain.setValueAtTime(0.15, now);
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
 
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      this._connectAndAutoCleanup(osc, gain);
 
       osc.start(now);
       osc.stop(now + 0.12);
@@ -68,8 +78,7 @@ class SoundEngine {
       gain.gain.setValueAtTime(0.2, now);
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
 
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      this._connectAndAutoCleanup(osc, gain);
 
       osc.start(now);
       osc.stop(now + 0.25);
@@ -93,8 +102,7 @@ class SoundEngine {
       gain.gain.setValueAtTime(0.25, now);
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
 
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      this._connectAndAutoCleanup(osc, gain);
 
       osc.start(now);
       osc.stop(now + 0.3);
@@ -119,8 +127,7 @@ class SoundEngine {
       gain.gain.setValueAtTime(0.18, now);
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
 
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      this._connectAndAutoCleanup(osc, gain);
 
       osc.start(now);
       osc.stop(now + 0.3);
@@ -147,8 +154,7 @@ class SoundEngine {
         gain.gain.setValueAtTime(0.18, startTime);
         gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        this._connectAndAutoCleanup(osc, gain);
 
         osc.start(startTime);
         osc.stop(startTime + 0.15);
@@ -176,8 +182,7 @@ class SoundEngine {
         gain.gain.setValueAtTime(0.2, startTime);
         gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        this._connectAndAutoCleanup(osc, gain);
 
         osc.start(startTime);
         osc.stop(startTime + 0.4);
