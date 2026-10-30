@@ -7,6 +7,7 @@ import VictoryModal from './components/VictoryModal.jsx';
 import { RED_CARDS, BLUE_CARDS } from './data/cards.js';
 import { DANCE_STUDIO_EVENTS } from './data/memeEvents.js';
 import { sound } from './utils/sound.js';
+import { getAIDecision } from './services/aiService.js';
 import { Shield, Flame, Play, Sparkles, Keyboard, Command } from 'lucide-react';
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
   const [playerSide, setPlayerSide] = useState('blue'); // 'red' | 'blue'
   const [gameMode, setGameMode] = useState('pve'); // 'pve' | 'pvp'
   const [muted, setMuted] = useState(false);
+  const [aiEngineName, setAiEngineName] = useState('⚡ Cloudflare Workers AI');
 
   // 戰況數值
   const [corpHP, setCorpHP] = useState(100);
@@ -154,15 +156,34 @@ export default function App() {
     }, 900);
   };
 
-  // AI 對手出牌行動
-  const runAITurn = () => {
+  // AI 對手出牌行動（調用 Workers AI 邊緣神經網路）
+  const runAITurn = async () => {
     const oDeck = playerSide === 'red' ? BLUE_CARDS : RED_CARDS;
     
-    // AI 隨機打出一張手牌
     if (opponentHand.length > 0) {
-      const aiCard = opponentHand[Math.floor(Math.random() * opponentHand.length)];
-      executeCardEffect(aiCard, false);
-      setOpponentHand((prev) => prev.filter((c) => c !== aiCard));
+      const decision = await getAIDecision({
+        playerSide,
+        corpHP,
+        breachProgress,
+        danceGauge,
+        rounds,
+        opponentHand,
+        playerEnergy
+      });
+
+      if (decision && decision.card) {
+        setAiEngineName(decision.engine);
+        const opponentTag = playerSide === 'red' ? 'AI-BLUE' : 'AI-RED';
+        addLog(opponentTag, `[${decision.engine}] ${decision.tacticalReason}`, 'system');
+        addLog('TRASH-TALK', `💬 對手嗆聲：「${decision.banter}」`, playerSide === 'red' ? 'defense' : 'attack');
+
+        executeCardEffect(decision.card, false);
+        setOpponentHand((prev) => prev.filter((c) => c !== decision.card));
+      } else {
+        const aiCard = opponentHand[0];
+        executeCardEffect(aiCard, false);
+        setOpponentHand((prev) => prev.filter((c) => c !== aiCard));
+      }
     }
 
     // 回合重整：輪回玩家
@@ -345,6 +366,7 @@ export default function App() {
             onToggleMute={handleToggleMute}
             playerSide={playerSide}
             onResetGame={() => setGameStarted(false)}
+            aiEngine={aiEngineName}
           />
 
           <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 max-w-7xl mx-auto w-full">

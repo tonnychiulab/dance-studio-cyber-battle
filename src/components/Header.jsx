@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Flame, Music, Volume2, VolumeX, RotateCcw } from 'lucide-react';
+import { Shield, Flame, Music, Volume2, VolumeX, RotateCcw, Cpu } from 'lucide-react';
 
 export default function Header({ 
   corpHP, 
@@ -8,7 +8,8 @@ export default function Header({
   muted, 
   onToggleMute, 
   playerSide, 
-  onResetGame 
+  onResetGame,
+  aiEngine = '⚡ Cloudflare Workers AI'
 }) {
   const isRed = playerSide === 'red';
   const isDanceCritical = danceGauge >= 80;
@@ -107,6 +108,11 @@ export default function Header({
 
         {/* 右側操作面板 */}
         <div className="flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/40 border border-purple-800/60 text-xs font-mono font-bold text-purple-300 shadow-sm">
+            <Cpu className="size-3.5 text-purple-400" />
+            <span className="truncate max-w-[180px]">{aiEngine}</span>
+          </div>
+
           <div className="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-mono font-bold flex items-center gap-2">
             <span className={`size-2.5 rounded-full ${isRed ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-sky-500 shadow-[0_0_8px_rgba(56,189,248,0.8)]'}`} />
             <span className={isRed ? 'text-rose-300' : 'text-sky-300'}>
