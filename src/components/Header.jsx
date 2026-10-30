@@ -114,9 +114,21 @@ export default function Header({
           </div>
 
           <div className="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-mono font-bold flex items-center gap-2">
-            <span className={`size-2.5 rounded-full ${isRed ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]' : 'bg-sky-500 shadow-[0_0_8px_rgba(56,189,248,0.8)]'}`} />
-            <span className={isRed ? 'text-rose-300' : 'text-sky-300'}>
-              {isRed ? '🔴 紅隊滲透' : '🔵 藍隊守備'}
+            <span className={`size-2.5 rounded-full ${
+              playerSide === 'spectator' 
+                ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]'
+                : isRed 
+                  ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]' 
+                  : 'bg-sky-500 shadow-[0_0_8px_rgba(56,189,248,0.8)]'
+            }`} />
+            <span className={
+              playerSide === 'spectator'
+                ? 'text-purple-300'
+                : isRed 
+                  ? 'text-rose-300' 
+                  : 'text-sky-300'
+            }>
+              {playerSide === 'spectator' ? '👁️ 白隊裁判' : isRed ? '🔴 紅隊滲透' : '🔵 藍隊守備'}
             </span>
           </div>
 

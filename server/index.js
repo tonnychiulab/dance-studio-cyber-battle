@@ -24,12 +24,14 @@ export default {
     if (url.pathname === '/api/ai-turn' && request.method === 'POST') {
       try {
         const body = await request.json();
-        const opponentSide = body.playerSide === 'red' ? 'blue' : 'red';
+        const opponentSide = body.actingSide || (body.playerSide === 'red' ? 'blue' : 'red');
         const opponentRole = opponentSide === 'red' ? '🔴 紅隊 APT 滲透專家' : '🔵 藍隊 SOC 資安防禦官';
+        const opponentTarget = opponentSide === 'red' ? '藍隊守備方' : '紅隊滲透方';
+        const availableHand = body.actingHand || body.opponentHand || [];
 
         const systemPrompt = `你是一個專業且諷刺中二的 ${opponentRole}。
 你正在參加一場名為「要打去練舞室打」的紅藍對抗卡牌對決。
-對手（玩家）扮演的是 ${body.playerSide === 'red' ? '紅隊滲透方' : '藍隊守備方'}。
+你的對手是 ${opponentTarget}。白隊裁判正在即時監控此戰局。
 
 【當前戰況】：
 - 企業防禦 HP: ${body.corpHP} / 100
@@ -38,7 +40,7 @@ export default {
 - 目前對決回合: 第 ${body.rounds} 回合
 
 【你手中的可用手牌清單】：
-${JSON.stringify(body.opponentHand, null, 2)}
+${JSON.stringify(availableHand, null, 2)}
 
 【戰術思維指引】：
 - 如果你是紅隊：目標是將滲透進度拉到 100% 或使企業 HP 歸零。若尬舞條接近 80%，打出迷因牌能引爆練舞室大招！
@@ -81,9 +83,9 @@ ${JSON.stringify(body.opponentHand, null, 2)}
         }
 
         // 智慧型安全防護：若模型未回傳合法結構或卡牌不存在，自動兜底選擇
-        const availableIds = (body.opponentHand || []).map(c => c.id);
+        const availableIds = availableHand.map(c => c.id);
         if (!decision || !availableIds.includes(decision.cardId)) {
-          const fallbackCard = body.opponentHand && body.opponentHand.length > 0 ? body.opponentHand[0] : null;
+          const fallbackCard = availableHand.length > 0 ? availableHand[0] : null;
           decision = {
             cardId: fallbackCard ? fallbackCard.id : null,
             tacticalReason: '邊緣神經網路即時決策',

@@ -14,10 +14,13 @@ export default function VictoryModal({ winner, playerSide, rounds, onRestart }) 
     });
   }, []);
 
-  const isPlayerWinner = winner === playerSide;
+  const isSpectator = playerSide === 'spectator';
+  const isPlayerWinner = isSpectator ? false : (winner === playerSide);
   const isRed = winner === 'red';
 
-  const shareText = `【要打去練舞室打之紅藍對抗篇】\n我扮演了 ${playerSide === 'red' ? '🔴紅隊' : '🔵藍隊'}，在第 ${rounds} 回合終局對決中${isPlayerWinner ? '贏得勝利' : '完成演練'}！\n紫隊成熟度鑑定：S-Rank 卓越！\n快來開瀏覽器挑戰：https://dance-studio-cyber-battle.tw365ai.workers.dev/`;
+  const shareText = isSpectator
+    ? `【要打去練舞室打之紅藍對抗篇】\n我以「白隊總裁判長」視角觀賞了 Cloudflare Workers AI 雙 Agent 自動對決，在第 ${rounds} 回合見證了${isRed ? '🔴紅隊突破邊界' : '🔵藍隊成功防守'}！\n紫隊成熟度鑑定：S-Rank 卓越！\n快來開瀏覽器挑戰：https://dance-studio-cyber-battle.tw365ai.workers.dev/`
+    : `【要打去練舞室打之紅藍對抗篇】\n我扮演了 ${playerSide === 'red' ? '🔴紅隊' : '🔵藍隊'}，在第 ${rounds} 回合終局對決中${isPlayerWinner ? '贏得勝利' : '完成演練'}！\n紫隊成熟度鑑定：S-Rank 卓越！\n快來開瀏覽器挑戰：https://dance-studio-cyber-battle.tw365ai.workers.dev/`;
 
   const handleCopy = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
@@ -48,7 +51,11 @@ export default function VictoryModal({ winner, playerSide, rounds, onRestart }) 
         </span>
 
         <h2 className="text-2xl font-black text-slate-100 mt-2 mb-4">
-          {isPlayerWinner ? '🎉 恭喜獲勝！戰情室演練大捷！' : '🤝 演練平手收官！雙方皆具極高韌性！'}
+          {isSpectator 
+            ? (isRed ? '🏆 紅隊 AI 突破邊界！白隊裁判見證演練成功！' : '🛡️ 藍隊 AI 守住底線！白隊裁判見證防禦卓越！')
+            : isPlayerWinner 
+              ? '🎉 恭喜獲勝！戰情室演練大捷！' 
+              : '🤝 演練平手收官！雙方皆具極高韌性！'}
         </h2>
 
         {/* 紫隊成熟度鑑定證書 */}

@@ -2,7 +2,7 @@ import React from 'react';
 import { Zap, Shield, Flame, Music, Sparkles } from 'lucide-react';
 import { sound } from '../utils/sound.js';
 
-export default function Card({ card, onPlay, canPlay, isOpponent = false }) {
+export default function Card({ card, onPlay, canPlay, isOpponent = false, statusText }) {
   const isRed = card.side === 'red';
   const isMeme = card.type === 'meme' || card.mitre?.startsWith('Meme');
 
@@ -144,7 +144,7 @@ export default function Card({ card, onPlay, canPlay, isOpponent = false }) {
                   : 'bg-sky-600/30 text-sky-200 hover:bg-sky-600 hover:text-white border border-sky-500/50 shadow-md shadow-sky-950/40'
               : 'bg-slate-800/40 text-slate-500 border border-slate-800'
           }`}>
-            {canPlay ? '⚡ 點擊出牌' : '能量不足'}
+            {canPlay ? '⚡ 點擊出牌' : (statusText || '待命')}
           </span>
         </div>
       </div>

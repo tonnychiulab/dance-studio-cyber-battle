@@ -1,22 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header.jsx';
 import GameBoard from './components/GameBoard.jsx';
 import TerminalLog from './components/TerminalLog.jsx';
 import DanceStudioModal from './components/DanceStudioModal.jsx';
 import VictoryModal from './components/VictoryModal.jsx';
+import SpectatorControls from './components/SpectatorControls.jsx';
 import { RED_CARDS, BLUE_CARDS } from './data/cards.js';
 import { DANCE_STUDIO_EVENTS } from './data/memeEvents.js';
 import { sound } from './utils/sound.js';
 import { getAIDecision } from './services/aiService.js';
-import { Shield, Flame, Play, Sparkles, Keyboard, Command } from 'lucide-react';
+import { Shield, Flame, Play, Sparkles, Keyboard, Command, Eye } from 'lucide-react';
 
 export default function App() {
   // 遊戲啟動狀態
   const [gameStarted, setGameStarted] = useState(false);
-  const [playerSide, setPlayerSide] = useState('blue'); // 'red' | 'blue'
-  const [gameMode, setGameMode] = useState('pve'); // 'pve' | 'pvp'
+  const [playerSide, setPlayerSide] = useState('blue'); // 'red' | 'blue' | 'spectator'
+  const [gameMode, setGameMode] = useState('pve'); // 'pve' | 'spectator'
   const [muted, setMuted] = useState(false);
   const [aiEngineName, setAiEngineName] = useState('⚡ Cloudflare Workers AI');
+
+  // 觀戰模式控制狀態 (AI vs AI 白隊裁判)
+  const [currentTurnSide, setCurrentTurnSide] = useState('red'); // 'red' | 'blue'
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [spectatorSpeed, setSpectatorSpeed] = useState(1); // 1: 1x (2000ms), 2: 2x (1000ms)
+  const isExecutingTurnRef = useRef(false);
 
   // 戰況數值
   const [corpHP, setCorpHP] = useState(100);
@@ -51,7 +58,7 @@ export default function App() {
   };
 
   // 開始新遊戲
-  const startNewGame = (side = playerSide) => {
+  const startNewGame = (side = playerSide, mode = 'pve') => {
     sound.playDefense();
     setCorpHP(100);
     setBreachProgress(0);
@@ -59,25 +66,50 @@ export default function App() {
     setRounds(1);
     setPlayerEnergy(3);
     setMaxEnergy(3);
-    setIsPlayerTurn(true);
     setWinner(null);
     setActiveDanceEvent(null);
     setLastPlayedCard(null);
 
-    const pDeck = side === 'red' ? RED_CARDS : BLUE_CARDS;
-    const oDeck = side === 'red' ? BLUE_CARDS : RED_CARDS;
+    if (side === 'spectator' || mode === 'spectator') {
+      setGameMode('spectator');
+      setPlayerSide('spectator');
+      setIsPlayerTurn(false);
+      setCurrentTurnSide('red');
+      setIsAutoPlaying(true);
+      setSpectatorSpeed(1);
 
-    setPlayerHand(getRandomCards(pDeck, 4));
-    setOpponentHand(getRandomCards(oDeck, 4));
+      // 裁判觀戰模式：紅隊為 playerHand (下方)，藍隊為 opponentHand (上方)
+      setPlayerHand(getRandomCards(RED_CARDS, 4));
+      setOpponentHand(getRandomCards(BLUE_CARDS, 4));
 
-    setLogs([
-      {
-        time: new Date().toLocaleTimeString('zh-TW', { hour12: false }),
-        tag: 'SYSTEM',
-        message: `戰情室全域防禦系統連線！玩家加入【${side === 'red' ? '🔴 紅隊滲透方' : '🔵 藍隊守備方'}】，對抗自動化攻防引擎。`,
-        type: 'system'
-      }
-    ]);
+      setLogs([
+        {
+          time: new Date().toLocaleTimeString('zh-TW', { hour12: false }),
+          tag: 'REFEREE',
+          message: '👁️ 白隊總裁判長進駐戰情室！Cloudflare Workers AI 邊緣雙 Agent 全自動攻防正式開戰！',
+          type: 'dance'
+        }
+      ]);
+    } else {
+      setGameMode('pve');
+      setPlayerSide(side);
+      setIsPlayerTurn(true);
+
+      const pDeck = side === 'red' ? RED_CARDS : BLUE_CARDS;
+      const oDeck = side === 'red' ? BLUE_CARDS : RED_CARDS;
+
+      setPlayerHand(getRandomCards(pDeck, 4));
+      setOpponentHand(getRandomCards(oDeck, 4));
+
+      setLogs([
+        {
+          time: new Date().toLocaleTimeString('zh-TW', { hour12: false }),
+          tag: 'SYSTEM',
+          message: `戰情室全域防禦系統連線！玩家加入【${side === 'red' ? '🔴 紅隊滲透方' : '🔵 藍隊守備方'}】，對抗自動化攻防引擎。`,
+          type: 'system'
+        }
+      ]);
+    }
 
     setGameStarted(true);
   };
@@ -98,7 +130,7 @@ export default function App() {
       // 紅隊攻擊：增加滲透進度，削減企業防禦
       setBreachProgress((prev) => Math.min(100, prev + card.attack));
       setCorpHP((prev) => Math.max(0, prev - Math.floor(card.attack * 0.8)));
-      addLog(card.mitre, `${isPlayer ? '玩家' : '對手'}發動 [${card.name}]！滲透進度 +${card.attack}%！`, 'attack');
+      addLog(card.mitre, `${isPlayer ? (gameMode === 'spectator' ? '紅隊 AI' : '玩家') : '對手'}發動 [${card.name}]！滲透進度 +${card.attack}%！`, 'attack');
     } else {
       sound.playDefense();
       // 藍隊防禦：恢復企業防禦，降低滲透進度
@@ -106,7 +138,7 @@ export default function App() {
       if (card.reduceBreach) {
         setBreachProgress((prev) => Math.max(0, prev - card.reduceBreach));
       }
-      addLog(card.mitre, `${isPlayer ? '玩家' : '對手'}部署 [${card.name}]！修復防禦 +${card.defense} 點！`, 'defense');
+      addLog(card.mitre, `${isPlayer ? (gameMode === 'spectator' ? '紅隊 AI' : '玩家') : (gameMode === 'spectator' ? '藍隊 AI' : '對手')}部署 [${card.name}]！修復防禦 +${card.defense} 點！`, 'defense');
     }
 
     // 累積尷尬值 / 尬舞條
@@ -123,8 +155,9 @@ export default function App() {
     }
   };
 
-  // 玩家出牌
+  // 玩家出牌 (PvE 模式)
   const handlePlayCard = (card) => {
+    if (gameMode === 'spectator') return;
     if (!isPlayerTurn || playerEnergy < card.cost) {
       sound.playBuzz();
       return;
@@ -144,8 +177,9 @@ export default function App() {
     }
   };
 
-  // 結束玩家回合，輪到對手
+  // 結束玩家回合，輪到對手 (PvE 模式)
   const handleEndTurn = () => {
+    if (gameMode === 'spectator') return;
     if (!isPlayerTurn) return;
     setIsPlayerTurn(false);
     addLog('TURN', `第 ${rounds} 回合結束，戰術主動權轉移至對手...`, 'system');
@@ -156,7 +190,7 @@ export default function App() {
     }, 900);
   };
 
-  // AI 對手出牌行動（調用 Workers AI 邊緣神經網路）
+  // AI 對手出牌行動（調用 Workers AI 邊緣神經網路 - PvE 模式）
   const runAITurn = async () => {
     const oDeck = playerSide === 'red' ? BLUE_CARDS : RED_CARDS;
     
@@ -201,6 +235,128 @@ export default function App() {
     }, 700);
   };
 
+  // 觀戰模式核心：執行單一步驟回合 (AI vs AI Spectator Turn)
+  const executeSpectatorTurn = async () => {
+    if (isExecutingTurnRef.current || winner || activeDanceEvent || !gameStarted || gameMode !== 'spectator') {
+      return;
+    }
+    isExecutingTurnRef.current = true;
+
+    try {
+      if (currentTurnSide === 'red') {
+        // 紅隊回合
+        let currentHand = playerHand;
+        if (currentHand.length === 0) {
+          const drawn = getRandomCards(RED_CARDS, 1);
+          currentHand = drawn;
+          setPlayerHand(drawn);
+        }
+
+        const decision = await getAIDecision({
+          playerSide: 'spectator',
+          actingSide: 'red',
+          actingHand: currentHand,
+          corpHP,
+          breachProgress,
+          danceGauge,
+          rounds,
+          opponentHand: currentHand,
+          playerEnergy
+        });
+
+        const cardToPlay = (decision && decision.card) ? decision.card : currentHand[0];
+        if (decision && decision.engine) setAiEngineName(decision.engine);
+
+        addLog('AI-RED', `[${decision?.engine || 'Cloudflare AI'}] ${decision?.tacticalReason || '執行滲透攻擊'}`, 'attack');
+        if (decision?.banter) {
+          addLog('TRASH-TALK', `💬 紅隊嗆聲：「${decision.banter}」`, 'attack');
+        }
+
+        executeCardEffect(cardToPlay, true);
+        setPlayerHand((prev) => prev.filter((c) => c !== cardToPlay));
+        setCurrentTurnSide('blue');
+      } else {
+        // 藍隊回合
+        let currentHand = opponentHand;
+        if (currentHand.length === 0) {
+          const drawn = getRandomCards(BLUE_CARDS, 1);
+          currentHand = drawn;
+          setOpponentHand(drawn);
+        }
+
+        const decision = await getAIDecision({
+          playerSide: 'spectator',
+          actingSide: 'blue',
+          actingHand: currentHand,
+          corpHP,
+          breachProgress,
+          danceGauge,
+          rounds,
+          opponentHand: currentHand,
+          playerEnergy
+        });
+
+        const cardToPlay = (decision && decision.card) ? decision.card : currentHand[0];
+        if (decision && decision.engine) setAiEngineName(decision.engine);
+
+        addLog('AI-BLUE', `[${decision?.engine || 'Cloudflare AI'}] ${decision?.tacticalReason || '部署防線加固'}`, 'defense');
+        if (decision?.banter) {
+          addLog('TRASH-TALK', `💬 藍隊回敬：「${decision.banter}」`, 'defense');
+        }
+
+        executeCardEffect(cardToPlay, false);
+        setOpponentHand((prev) => prev.filter((c) => c !== cardToPlay));
+
+        // 藍隊出完牌後回合推進：回合數加 1，雙方補 1 張牌
+        setRounds((prev) => prev + 1);
+        setPlayerHand((prev) => [...prev, ...getRandomCards(RED_CARDS, 1)]);
+        setOpponentHand((prev) => [...prev, ...getRandomCards(BLUE_CARDS, 1)]);
+        setCurrentTurnSide('red');
+      }
+    } catch (err) {
+      console.error('Spectator turn execution error:', err);
+    } finally {
+      isExecutingTurnRef.current = false;
+    }
+  };
+
+  // 觀戰模式自動定時器
+  useEffect(() => {
+    if (gameMode !== 'spectator' || !gameStarted || !isAutoPlaying || winner || activeDanceEvent) {
+      return;
+    }
+
+    const delay = spectatorSpeed === 2 ? 1000 : 2000;
+    const timer = setTimeout(() => {
+      executeSpectatorTurn();
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [
+    gameMode,
+    gameStarted,
+    isAutoPlaying,
+    currentTurnSide,
+    winner,
+    activeDanceEvent,
+    spectatorSpeed,
+    playerHand,
+    opponentHand,
+    corpHP,
+    breachProgress,
+    danceGauge,
+    rounds
+  ]);
+
+  // 白隊裁判強制干預大招
+  const handleForceDanceStudio = () => {
+    sound.playAlarm();
+    sound.playDanceBeat();
+    const randomEvent = DANCE_STUDIO_EVENTS[Math.floor(Math.random() * DANCE_STUDIO_EVENTS.length)];
+    setActiveDanceEvent(randomEvent);
+    addLog('REFEREE', `🚨 白隊總裁判長動用最高裁決權：「不要再打了！要打去練舞室打！」強制開啟尬舞事件！`, 'dance');
+  };
+
   // 檢查勝負判定
   useEffect(() => {
     if (breachProgress >= 100 || corpHP <= 0) {
@@ -220,6 +376,21 @@ export default function App() {
 
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (gameMode === 'spectator') {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          setIsAutoPlaying((prev) => !prev);
+        } else if (e.key === 'n' || e.key === 'N') {
+          e.preventDefault();
+          setIsAutoPlaying(false);
+          executeSpectatorTurn();
+        } else if (e.key === 'd' || e.key === 'D') {
+          e.preventDefault();
+          handleForceDanceStudio();
+        }
+        return;
+      }
 
       if (e.code === 'Space') {
         e.preventDefault();
@@ -241,17 +412,22 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameStarted, isPlayerTurn, playerHand, playerEnergy, winner, activeDanceEvent]);
+  }, [gameStarted, gameMode, isPlayerTurn, playerHand, playerEnergy, winner, activeDanceEvent, isAutoPlaying]);
 
   // 關閉練舞室事件彈窗並套用效果
   const handleDismissDanceModal = () => {
     if (!activeDanceEvent) return;
 
     if (activeDanceEvent.effectType === 'REFRESH_ALL') {
-      const pDeck = playerSide === 'red' ? RED_CARDS : BLUE_CARDS;
-      const oDeck = playerSide === 'red' ? BLUE_CARDS : RED_CARDS;
-      setPlayerHand(getRandomCards(pDeck, 4));
-      setOpponentHand(getRandomCards(oDeck, 4));
+      if (gameMode === 'spectator') {
+        setPlayerHand(getRandomCards(RED_CARDS, 4));
+        setOpponentHand(getRandomCards(BLUE_CARDS, 4));
+      } else {
+        const pDeck = playerSide === 'red' ? RED_CARDS : BLUE_CARDS;
+        const oDeck = playerSide === 'red' ? BLUE_CARDS : RED_CARDS;
+        setPlayerHand(getRandomCards(pDeck, 4));
+        setOpponentHand(getRandomCards(oDeck, 4));
+      }
     } else if (activeDanceEvent.effectType === 'SHIELD_AND_ENERGY') {
       setCorpHP((prev) => Math.min(100, prev + 20));
       setPlayerEnergy((prev) => Math.min(maxEnergy + 2, prev + 2));
@@ -266,13 +442,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-mono relative overflow-hidden crt-overlay bg-cyber-grid">
-      {/* 遊戲未啟動：歡迎與陣營選擇畫面 (Frontend Design 典範設計) */}
+      {/* 遊戲未啟動：歡迎與模式選擇畫面 (Frontend Design 典範設計) */}
       {!gameStarted ? (
         <main className="flex-1 flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full bg-gradient-to-b from-slate-900/95 via-slate-950 to-black border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-10 shadow-2xl text-center relative overflow-hidden backdrop-blur-md">
+          <div className="max-w-3xl w-full bg-gradient-to-b from-slate-900/95 via-slate-950 to-black border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-10 shadow-2xl text-center relative overflow-hidden backdrop-blur-md">
             {/* 裝飾背景柔光 */}
             <div className="absolute -top-32 -left-32 size-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-32 -right-32 size-64 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-32 -right-32 size-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
             {/* 頂部動態 Emoji 徽章 */}
             <div className="size-20 mx-auto rounded-3xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-4xl mb-4 shadow-[0_0_35px_rgba(16,185,129,0.3)] animate-pulse select-none">
@@ -290,12 +466,12 @@ export default function App() {
               之紅藍對抗篇 (Dance Studio Cyber Battle)
             </p>
 
-            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto leading-relaxed mb-7">
-              實時 APT 滲透與 Cloudflare 邊緣防禦的世紀對決！攻防過熱時白隊裁判隨時介入強制尬舞。純前端 SPA，零後端相依，全球 CDN 即開即戰。
+            <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed mb-7">
+              實時 APT 滲透與 Cloudflare 邊緣防禦的世紀對決！搭載 Cloudflare Workers AI 免費邊緣模型推論。支援玩家攻防或雙 AI 全自動觀戰對決。
             </p>
 
-            {/* 陣營選擇卡片 (Emil 物理點擊反饋) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-left">
+            {/* 三種對戰模式卡片 (Emil 物理反饋與無障礙單選) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mb-6 text-left">
               <div
                 role="button"
                 tabIndex={0}
@@ -312,7 +488,7 @@ export default function App() {
                   <Flame className="size-4" /> 🔴 扮演紅隊 (滲透方)
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  運用 SSRF、CI/CD 依賴毒化與 IAM Wildcard 提權，目標突破邊界取得 Canary Flag！
+                  運用 SSRF、依賴毒化與 IAM Wildcard 提權，目標突破邊界奪取 Flag！
                 </p>
               </div>
 
@@ -332,26 +508,68 @@ export default function App() {
                   <Shield className="size-4" /> 🔵 扮演藍隊 (守備方)
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  部署 WAF 規則、強制 IMDSv2 與 EDR 節點隔離，目標在 10 回合內壓低 MTTD 守護資安！
+                  部署 WAF 規則、強制 IMDSv2 與 EDR 節點隔離，守護企業核心資產！
+                </p>
+              </div>
+
+              <div
+                role="button"
+                tabIndex={0}
+                aria-pressed={playerSide === 'spectator'}
+                onClick={() => setPlayerSide('spectator')}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPlayerSide('spectator'); } }}
+                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-purple-500 ${
+                  playerSide === 'spectator'
+                    ? 'bg-purple-950/50 border-purple-400 neon-border-purple shadow-xl'
+                    : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-2 text-purple-300 font-black text-sm mb-1.5">
+                  <Eye className="size-4" /> 👁️ 白隊總裁判 (全自動)
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  雙 AI 自主邊緣神經推論對抗！裁判掌控暫停、倍速與「強制練舞室」干預特權。
                 </p>
               </div>
             </div>
 
             {/* 鍵盤快捷鍵指示提示 */}
-            <div className="flex items-center justify-center gap-4 text-[11px] text-slate-500 mb-6 font-mono">
+            <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-500 mb-6 font-mono">
               <span className="flex items-center gap-1">
-                <Keyboard className="size-3.5" /> 支援鍵盤熱鍵：
+                <Keyboard className="size-3.5" /> 鍵盤熱鍵支援：
               </span>
-              <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-bold">1-4 出牌</span>
-              <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-bold">Space 結束回合</span>
+              {playerSide === 'spectator' ? (
+                <>
+                  <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">Space 播放/暫停</span>
+                  <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">N 單步推進</span>
+                  <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">D 強制尬舞</span>
+                </>
+              ) : (
+                <>
+                  <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-bold">1-4 出牌</span>
+                  <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-bold">Space 結束回合</span>
+                </>
+              )}
             </div>
 
             {/* 開始戰鬥按鈕 */}
             <button
-              onClick={() => startNewGame(playerSide)}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-base tracking-wider shadow-xl shadow-emerald-500/30 transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400 mb-3"
+              onClick={() => startNewGame(playerSide, playerSide === 'spectator' ? 'spectator' : 'pve')}
+              className={`w-full py-4 rounded-2xl font-black text-base tracking-wider shadow-xl transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 mb-3 ${
+                playerSide === 'spectator'
+                  ? 'bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-purple-500/30 focus-visible:ring-purple-400'
+                  : 'bg-gradient-to-r from-emerald-500 via-cyan-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-emerald-500/30 focus-visible:ring-emerald-400'
+              }`}
             >
-              <Play className="size-5 fill-slate-950" /> 開始戰情室對抗 (進入對決)
+              {playerSide === 'spectator' ? (
+                <>
+                  <Eye className="size-5" /> 開啟白隊總裁判觀戰席 (雙 AI 自動對決)
+                </>
+              ) : (
+                <>
+                  <Play className="size-5 fill-current" /> 開始戰情室對抗 (進入對決)
+                </>
+              )}
             </button>
 
             {/* Cloudflare 正式節點連結按鈕 */}
@@ -379,6 +597,24 @@ export default function App() {
             aiEngine={aiEngineName}
           />
 
+          {/* 觀戰模式專屬：白隊總裁判懸浮控制台 */}
+          {gameMode === 'spectator' && (
+            <div className="pt-2">
+              <SpectatorControls
+                isPlaying={isAutoPlaying}
+                onTogglePlay={() => setIsAutoPlaying((prev) => !prev)}
+                onStepNext={() => {
+                  setIsAutoPlaying(false);
+                  executeSpectatorTurn();
+                }}
+                speed={spectatorSpeed}
+                onToggleSpeed={() => setSpectatorSpeed((prev) => (prev === 1 ? 2 : 1))}
+                onForceDanceStudio={handleForceDanceStudio}
+                currentTurnSide={currentTurnSide}
+              />
+            </div>
+          )}
+
           <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 max-w-7xl mx-auto w-full">
             <GameBoard
               playerSide={playerSide}
@@ -391,6 +627,8 @@ export default function App() {
               isPlayerTurn={isPlayerTurn}
               lastPlayedCard={lastPlayedCard}
               rounds={rounds}
+              gameMode={gameMode}
+              currentTurnSide={currentTurnSide}
             />
 
             <div className="w-full lg:w-88 shrink-0">
@@ -412,7 +650,7 @@ export default function App() {
           winner={winner}
           playerSide={playerSide}
           rounds={rounds}
-          onRestart={() => startNewGame(playerSide)}
+          onRestart={() => startNewGame(playerSide, gameMode)}
         />
       )}
     </div>

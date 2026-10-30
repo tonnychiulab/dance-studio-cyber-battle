@@ -29,20 +29,21 @@ const BLUE_BANTER_POOL = [
  * 本地啟發式智慧決策引擎 (Heuristic Tactical Engine)
  */
 export function getLocalHeuristicDecision(gameState) {
-  const { playerSide, corpHP, breachProgress, danceGauge, rounds, opponentHand } = gameState;
-  const isOpponentRed = playerSide === 'blue';
+  const { playerSide, corpHP, breachProgress, danceGauge, rounds } = gameState;
+  const isActingRed = gameState.actingSide ? gameState.actingSide === 'red' : (playerSide === 'blue');
+  const hand = gameState.actingHand || gameState.opponentHand || [];
 
-  if (!opponentHand || opponentHand.length === 0) return null;
+  if (!hand || hand.length === 0) return null;
 
   let selectedCard = null;
   let tacticalReason = '';
-  const banters = isOpponentRed ? RED_BANTER_POOL : BLUE_BANTER_POOL;
+  const banters = isActingRed ? RED_BANTER_POOL : BLUE_BANTER_POOL;
   const randomBanter = banters[Math.floor(Math.random() * banters.length)];
 
-  if (isOpponentRed) {
+  if (isActingRed) {
     // === 紅隊 AI 戰術思維 ===
     // 1. 致命一擊檢查：若能直接使滲透率滿 100% 或使企業 HP 歸零，立刻發動最強終局卡！
-    const lethalCards = opponentHand.filter(
+    const lethalCards = hand.filter(
       c => breachProgress + c.attack >= 100 || corpHP - Math.floor(c.attack * 0.8) <= 0
     );
 
@@ -51,7 +52,7 @@ export function getLocalHeuristicDecision(gameState) {
       tacticalReason = '鎖定致命弱點，發動終局漏洞穿透！';
     } else if (danceGauge >= 70) {
       // 2. 尬舞大招誘發：尷尬條偏高時，優先打出迷因煙霧彈引爆白隊裁判
-      const memeCard = opponentHand.find(c => c.danceCharge >= 25 || c.mitre?.startsWith('Meme'));
+      const memeCard = hand.find(c => c.danceCharge >= 25 || c.mitre?.startsWith('Meme'));
       if (memeCard) {
         selectedCard = memeCard;
         tacticalReason = '戰情室過熱，強制誘發白隊裁判進場尬舞！';
@@ -60,7 +61,7 @@ export function getLocalHeuristicDecision(gameState) {
 
     // 3. 常態最高輸出原則
     if (!selectedCard) {
-      const sorted = [...opponentHand].sort((a, b) => b.attack - a.attack);
+      const sorted = [...hand].sort((a, b) => b.attack - a.attack);
       selectedCard = sorted[0];
       tacticalReason = `評估權限鏈條，打出最高攻擊力酬載【${selectedCard.name}】`;
     }
@@ -69,7 +70,7 @@ export function getLocalHeuristicDecision(gameState) {
     // === 藍隊 AI 戰術思維 ===
     // 1. 高危急迫檢查：若滲透進度高於 65%，全力壓制滲透
     if (breachProgress >= 65) {
-      const reducer = opponentHand.find(c => c.reduceBreach > 0);
+      const reducer = hand.find(c => c.reduceBreach > 0);
       if (reducer) {
         selectedCard = reducer;
         tacticalReason = `滲透進度達危險水位，部署【${reducer.name}】強力壓低滲透！`;
@@ -78,14 +79,14 @@ export function getLocalHeuristicDecision(gameState) {
 
     // 2. 血量急救：若 HP 低於 40%，全力加固防禦
     if (!selectedCard && corpHP <= 40) {
-      const maxDefense = [...opponentHand].sort((a, b) => b.defense - a.defense)[0];
+      const maxDefense = [...hand].sort((a, b) => b.defense - a.defense)[0];
       selectedCard = maxDefense;
       tacticalReason = `企業防禦告急，上線【${maxDefense.name}】修補邊界防護！`;
     }
 
     // 3. 常態防禦與過濾
     if (!selectedCard) {
-      const sorted = [...opponentHand].sort((a, b) => (b.defense + (b.reduceBreach || 0)) - (a.defense + (a.reduceBreach || 0)));
+      const sorted = [...hand].sort((a, b) => (b.defense + (b.reduceBreach || 0)) - (a.defense + (a.reduceBreach || 0)));
       selectedCard = sorted[0];
       tacticalReason = `維持縱深防禦，打出最佳防禦卡【${selectedCard.name}】`;
     }
@@ -100,11 +101,11 @@ export function getLocalHeuristicDecision(gameState) {
 }
 
 /**
- * 取得 AI 對手決策（優先 Cloudflare Workers AI，失敗自動降級）
+ * 取得 AI 決策（優先 Cloudflare Workers AI，失敗自動降級）
  */
 export async function getAIDecision(gameState) {
-  const { opponentHand } = gameState;
-  if (!opponentHand || opponentHand.length === 0) return null;
+  const hand = gameState.actingHand || gameState.opponentHand || [];
+  if (!hand || hand.length === 0) return null;
 
   try {
     // 2.5 秒超時機制 (AbortSignal.timeout)
@@ -125,7 +126,7 @@ export async function getAIDecision(gameState) {
     if (response.ok) {
       const data = await response.json();
       if (data.success && data.decision && data.decision.cardId) {
-        const foundCard = opponentHand.find(c => c.id === data.decision.cardId);
+        const foundCard = hand.find(c => c.id === data.decision.cardId);
         if (foundCard) {
           return {
             card: foundCard,
