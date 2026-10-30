@@ -7,7 +7,7 @@ import VictoryModal from './components/VictoryModal.jsx';
 import { RED_CARDS, BLUE_CARDS } from './data/cards.js';
 import { DANCE_STUDIO_EVENTS } from './data/memeEvents.js';
 import { sound } from './utils/sound.js';
-import { Shield, Flame, Users, Play, Sparkles } from 'lucide-react';
+import { Shield, Flame, Play, Sparkles, Keyboard, Command } from 'lucide-react';
 
 export default function App() {
   // 遊戲啟動狀態
@@ -50,6 +50,7 @@ export default function App() {
 
   // 開始新遊戲
   const startNewGame = (side = playerSide) => {
+    sound.playDefense();
     setCorpHP(100);
     setBreachProgress(0);
     setDanceGauge(0);
@@ -71,7 +72,7 @@ export default function App() {
       {
         time: new Date().toLocaleTimeString('zh-TW', { hour12: false }),
         tag: 'SYSTEM',
-        message: `戰情室啟動！玩家加入【${side === 'red' ? '🔴 紅隊滲透方' : '🔵 藍隊守備方'}】，對手為 AI 自動防護引擎。`,
+        message: `戰情室全域防禦系統連線！玩家加入【${side === 'red' ? '🔴 紅隊滲透方' : '🔵 藍隊守備方'}】，對抗自動化攻防引擎。`,
         type: 'system'
       }
     ]);
@@ -95,7 +96,7 @@ export default function App() {
       // 紅隊攻擊：增加滲透進度，削減企業防禦
       setBreachProgress((prev) => Math.min(100, prev + card.attack));
       setCorpHP((prev) => Math.max(0, prev - Math.floor(card.attack * 0.8)));
-      addLog(card.mitre, `${isPlayer ? '玩家' : '對手'}打出 [${card.name}]！造成 +${card.attack}% 滲透進度！`, 'attack');
+      addLog(card.mitre, `${isPlayer ? '玩家' : '對手'}發動 [${card.name}]！滲透進度 +${card.attack}%！`, 'attack');
     } else {
       sound.playDefense();
       // 藍隊防禦：恢復企業防禦，降低滲透進度
@@ -103,7 +104,7 @@ export default function App() {
       if (card.reduceBreach) {
         setBreachProgress((prev) => Math.max(0, prev - card.reduceBreach));
       }
-      addLog(card.mitre, `${isPlayer ? '玩家' : '對手'}部署 [${card.name}]！恢復 +${card.defense} 企業防禦值！`, 'defense');
+      addLog(card.mitre, `${isPlayer ? '玩家' : '對手'}部署 [${card.name}]！修復防禦 +${card.defense} 點！`, 'defense');
     }
 
     // 累積尷尬值 / 尬舞條
@@ -116,13 +117,16 @@ export default function App() {
       sound.playDanceBeat();
       const randomEvent = DANCE_STUDIO_EVENTS[Math.floor(Math.random() * DANCE_STUDIO_EVENTS.length)];
       setActiveDanceEvent(randomEvent);
-      addLog('DANCE-STUDIO', `⚠️ 尬舞值滿載！白隊裁判登場：「不要再打了！要打去練舞室打！」`, 'dance');
+      addLog('DANCE-STUDIO', `⚠️ 尬舞能量爆表！白隊裁判登場：「不要再打了！要打去練舞室打！」`, 'dance');
     }
   };
 
   // 玩家出牌
   const handlePlayCard = (card) => {
-    if (!isPlayerTurn || playerEnergy < card.cost) return;
+    if (!isPlayerTurn || playerEnergy < card.cost) {
+      sound.playBuzz();
+      return;
+    }
 
     setPlayerEnergy((prev) => prev - card.cost);
     setPlayerHand((prev) => prev.filter((c) => c !== card));
@@ -142,9 +146,9 @@ export default function App() {
   const handleEndTurn = () => {
     if (!isPlayerTurn) return;
     setIsPlayerTurn(false);
-    addLog('TURN', `第 ${rounds} 回合結束，輪到對手行動...`, 'system');
+    addLog('TURN', `第 ${rounds} 回合結束，戰術主動權轉移至對手...`, 'system');
 
-    // 對手 AI 決策（延遲 1 秒模擬思考）
+    // 對手 AI 決策（延遲 900ms 模擬計算思考）
     setTimeout(() => {
       runAITurn();
     }, 900);
@@ -172,7 +176,7 @@ export default function App() {
       setPlayerHand((prev) => [...prev, ...getRandomCards(pDeck, 1)]);
       setOpponentHand((prev) => [...prev, ...getRandomCards(oDeck, 1)]);
 
-      addLog('ROUND', `第 ${rounds + 1} 回合開始！行動點數已重置為 ${maxEnergy}。`, 'system');
+      addLog('ROUND', `第 ${rounds + 1} 回合開始！行動能量已重置至滿格 ${maxEnergy}。`, 'system');
     }, 700);
   };
 
@@ -188,6 +192,35 @@ export default function App() {
       addLog('VICTORY', '🛡️ 藍隊於 10 回合內嚴格壓制滲透，成功維護企業資安！', 'defense');
     }
   }, [breachProgress, corpHP, rounds]);
+
+  // 鍵盤極致體驗快捷鍵 (Emil Kowalski 鍵盤友善交互)
+  useEffect(() => {
+    if (!gameStarted || winner || activeDanceEvent) return;
+
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (isPlayerTurn) {
+          handleEndTurn();
+        }
+      } else if (['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4'].includes(e.code)) {
+        const num = parseInt(e.key, 10);
+        if (num >= 1 && num <= playerHand.length) {
+          const targetCard = playerHand[num - 1];
+          if (isPlayerTurn && playerEnergy >= targetCard.cost) {
+            handlePlayCard(targetCard);
+          } else {
+            sound.playBuzz();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameStarted, isPlayerTurn, playerHand, playerEnergy, winner, activeDanceEvent]);
 
   // 關閉練舞室事件彈窗並套用效果
   const handleDismissDanceModal = () => {
@@ -211,41 +244,50 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-mono relative overflow-hidden crt-overlay">
-      {/* 遊戲未啟動：歡迎與陣營選擇畫面 */}
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-mono relative overflow-hidden crt-overlay bg-cyber-grid">
+      {/* 遊戲未啟動：歡迎與陣營選擇畫面 (Frontend Design 典範設計) */}
       {!gameStarted ? (
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full bg-gradient-to-b from-slate-900 via-slate-950 to-black border-2 border-emerald-500/60 rounded-3xl p-6 sm:p-10 shadow-2xl text-center relative overflow-hidden">
-            <div className="size-20 mx-auto rounded-3xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-4xl mb-4 shadow-[0_0_30px_rgba(16,185,129,0.3)] animate-pulse">
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full bg-gradient-to-b from-slate-900/95 via-slate-950 to-black border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-10 shadow-2xl text-center relative overflow-hidden backdrop-blur-md">
+            {/* 裝飾背景柔光 */}
+            <div className="absolute -top-32 -left-32 size-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-32 -right-32 size-64 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* 頂部動態 Emoji 徽章 */}
+            <div className="size-20 mx-auto rounded-3xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-4xl mb-4 shadow-[0_0_35px_rgba(16,185,129,0.3)] animate-pulse select-none">
               💃
             </div>
 
-            <span className="text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold uppercase tracking-widest">
+            <span className="text-[11px] px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold uppercase tracking-widest shadow-sm">
               MITRE ATT&CK × 紫禁之巔經典迷因
             </span>
 
-            <h1 className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-300 to-rose-400 mt-3 mb-2 tracking-tight">
+            <h1 className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-300 to-rose-400 mt-4 mb-2 tracking-tight">
               「要打去練舞室打」
             </h1>
-            <p className="text-base text-rose-400 font-bold mb-6">
+            <p className="text-base sm:text-lg text-rose-400 font-black mb-5 tracking-wide">
               之紅藍對抗篇 (Dance Studio Cyber Battle)
             </p>
 
-            <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed mb-8">
-              結合真實 APT 滲透路徑、Cloudflare 藍隊防禦與經典台劇迷因！攻防過熱時白隊裁判隨時介入強制尬舞。純前端 SPA 架構，開瀏覽器就能玩。
+            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto leading-relaxed mb-7">
+              實時 APT 滲透與 Cloudflare 邊緣防禦的世紀對決！攻防過熱時白隊裁判隨時介入強制尬舞。純前端 SPA，零後端相依，全球 CDN 即開即戰。
             </p>
 
-            {/* 陣營選擇 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 text-left">
+            {/* 陣營選擇卡片 (Emil 物理點擊反饋) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-left">
               <div
+                role="button"
+                tabIndex={0}
+                aria-pressed={playerSide === 'red'}
                 onClick={() => setPlayerSide('red')}
-                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPlayerSide('red'); } }}
+                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-rose-500 ${
                   playerSide === 'red'
-                    ? 'bg-rose-950/40 border-rose-500 neon-border-red shadow-lg'
-                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                    ? 'bg-rose-950/50 border-rose-500 neon-border-red shadow-xl'
+                    : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
                 }`}
               >
-                <div className="flex items-center gap-2 text-rose-400 font-bold text-sm mb-1">
+                <div className="flex items-center gap-2 text-rose-400 font-black text-sm mb-1.5">
                   <Flame className="size-4" /> 🔴 扮演紅隊 (滲透方)
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -254,14 +296,18 @@ export default function App() {
               </div>
 
               <div
+                role="button"
+                tabIndex={0}
+                aria-pressed={playerSide === 'blue'}
                 onClick={() => setPlayerSide('blue')}
-                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPlayerSide('blue'); } }}
+                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-sky-500 ${
                   playerSide === 'blue'
-                    ? 'bg-sky-950/40 border-sky-500 neon-border-blue shadow-lg'
-                    : 'bg-slate-900/60 border-slate-800 hover:border-slate-700'
+                    ? 'bg-sky-950/50 border-sky-500 neon-border-blue shadow-xl'
+                    : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
                 }`}
               >
-                <div className="flex items-center gap-2 text-sky-400 font-bold text-sm mb-1">
+                <div className="flex items-center gap-2 text-sky-400 font-black text-sm mb-1.5">
                   <Shield className="size-4" /> 🔵 扮演藍隊 (守備方)
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -270,14 +316,24 @@ export default function App() {
               </div>
             </div>
 
+            {/* 鍵盤快捷鍵指示提示 */}
+            <div className="flex items-center justify-center gap-4 text-[11px] text-slate-500 mb-6 font-mono">
+              <span className="flex items-center gap-1">
+                <Keyboard className="size-3.5" /> 支援鍵盤熱鍵：
+              </span>
+              <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-bold">1-4 出牌</span>
+              <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-bold">Space 結束回合</span>
+            </div>
+
+            {/* 開始戰鬥按鈕 */}
             <button
               onClick={() => startNewGame(playerSide)}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-base tracking-wider shadow-lg shadow-emerald-500/30 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-base tracking-wider shadow-xl shadow-emerald-500/30 transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
               <Play className="size-5 fill-slate-950" /> 開始戰情室對抗 (進入對決)
             </button>
           </div>
-        </div>
+        </main>
       ) : (
         /* 遊戲進行中：主對戰介面 */
         <>
@@ -288,7 +344,6 @@ export default function App() {
             muted={muted}
             onToggleMute={handleToggleMute}
             playerSide={playerSide}
-            gameMode={gameMode}
             onResetGame={() => setGameStarted(false)}
           />
 
@@ -306,7 +361,7 @@ export default function App() {
               rounds={rounds}
             />
 
-            <div className="w-full lg:w-80 shrink-0">
+            <div className="w-full lg:w-88 shrink-0">
               <TerminalLog logs={logs} />
             </div>
           </main>

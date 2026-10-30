@@ -37,6 +37,56 @@ class SoundEngine {
     };
   }
 
+  // 觸覺微反饋：卡牌滑過微弱清脆 Tick
+  playHover() {
+    if (this.muted) return;
+    try {
+      this.init();
+      if (!this.ctx) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const now = this.ctx.currentTime;
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1400, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + 0.03);
+
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+
+      this._connectAndAutoCleanup(osc, gain);
+
+      osc.start(now);
+      osc.stop(now + 0.03);
+    } catch {}
+  }
+
+  // 行動點數不足錯誤提示音
+  playBuzz() {
+    if (this.muted) return;
+    try {
+      this.init();
+      if (!this.ctx) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const now = this.ctx.currentTime;
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(160, now);
+      osc.frequency.setValueAtTime(130, now + 0.08);
+
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+
+      this._connectAndAutoCleanup(osc, gain);
+
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } catch {}
+  }
+
   playCard() {
     if (this.muted) return;
     try {
