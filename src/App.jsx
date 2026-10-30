@@ -349,10 +349,20 @@ export default function App() {
             {/* 開始戰鬥按鈕 */}
             <button
               onClick={() => startNewGame(playerSide)}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-base tracking-wider shadow-xl shadow-emerald-500/30 transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-base tracking-wider shadow-xl shadow-emerald-500/30 transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400 mb-3"
             >
               <Play className="size-5 fill-slate-950" /> 開始戰情室對抗 (進入對決)
             </button>
+
+            {/* Cloudflare 正式節點連結按鈕 */}
+            <a
+              href="https://dance-studio-cyber-battle.tw365ai.workers.dev/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-orange-950/30 hover:bg-orange-950/50 border border-orange-500/40 text-orange-300 hover:text-orange-200 text-xs font-bold font-mono transition-all duration-150 active:scale-[0.98]"
+            >
+              ☁️ 連線至 Cloudflare 邊緣主節點 (Workers AI 支援) ↗
+            </a>
           </div>
         </main>
       ) : (

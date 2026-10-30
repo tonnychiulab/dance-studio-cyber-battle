@@ -17,7 +17,7 @@ export default function VictoryModal({ winner, playerSide, rounds, onRestart }) 
   const isPlayerWinner = winner === playerSide;
   const isRed = winner === 'red';
 
-  const shareText = `【要打去練舞室打之紅藍對抗篇】\n我扮演了 ${playerSide === 'red' ? '🔴紅隊' : '🔵藍隊'}，在第 ${rounds} 回合終局對決中${isPlayerWinner ? '贏得勝利' : '完成演練'}！\n紫隊成熟度鑑定：S-Rank 卓越！\n快來開瀏覽器挑戰：https://dance-studio-battle.pages.dev`;
+  const shareText = `【要打去練舞室打之紅藍對抗篇】\n我扮演了 ${playerSide === 'red' ? '🔴紅隊' : '🔵藍隊'}，在第 ${rounds} 回合終局對決中${isPlayerWinner ? '贏得勝利' : '完成演練'}！\n紫隊成熟度鑑定：S-Rank 卓越！\n快來開瀏覽器挑戰：https://dance-studio-cyber-battle.tw365ai.workers.dev/`;
 
   const handleCopy = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {

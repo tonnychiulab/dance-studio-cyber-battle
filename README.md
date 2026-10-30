@@ -1,12 +1,27 @@
 # 「要打去練舞室打」之紅藍對抗篇 💃⚔️
 *(Cyber Dance Studio: Red vs. Blue Battle)*
 
+[![馬上在 Cloudflare 線上玩](https://img.shields.io/badge/🎮_馬上在_Cloudflare_線上玩-dance--studio--cyber--battle-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://dance-studio-cyber-battle.tw365ai.workers.dev/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-Live_Demo-222222?style=for-the-badge&logo=github)](https://tonnychiulab.github.io/dance-studio-cyber-battle/)
+
 [![Cloudflare Security Audit](https://img.shields.io/badge/Cloudflare_Security-Audit_Passed-10B981?style=flat-square&logo=cloudflare)](docs/CLOUDFLARE_SECURITY_AUDIT.md)
+[![Workers AI](https://img.shields.io/badge/Cloudflare_Workers_AI-Llama_3.1_8B-purple?style=flat-square&logo=cloudflare)](server/index.js)
 [![Vulnerabilities](https://img.shields.io/badge/vulnerabilities-0_confirmed-brightgreen?style=flat-square)](docs/CLOUDFLARE_SECURITY_AUDIT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
 > **「住手！你們住手！不要再打了！你們要打去練舞室打！！！」**  
 > 一款將臺灣經典偶像劇《紫禁之巔》迷因與企業真實 **MITRE ATT&CK 紅藍資安攻防** 完美結合的回合制卡牌策略對決網頁遊戲！
+
+---
+
+## 🚀 線上即玩 (Play Online Now)
+
+點擊下方按鈕即可開瀏覽器直接開玩，免安裝、零延遲、全球邊緣 CDN 加速：
+
+| 服務節點 | 平台架構 | 運行狀態 | 立即對決連結 |
+| :--- | :--- | :---: | :--- |
+| ⚡ **全球邊緣主線 (含 Cloudflare Workers AI)** | **Cloudflare Workers** | 🟢 Live | [👉 **點此立即在 Cloudflare 開玩**](https://dance-studio-cyber-battle.tw365ai.workers.dev/) |
+| 🌐 **備用靜態線路** | **GitHub Pages** | 🟢 Live | [👉 **備用線路進入**](https://tonnychiulab.github.io/dance-studio-cyber-battle/) |
 
 ---
 
