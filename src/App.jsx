@@ -130,18 +130,19 @@ export default function App() {
 
     if (card.side === 'red') {
       sound.playAttack();
-      // 紅隊攻擊：增加滲透進度，削減企業防禦
+      // 紅隊攻擊：增加滲透進度，削減企業防禦 (平衡修正：降低連帶 HP 扣除至 35%，避免無腦雙殺)
       setBreachProgress((prev) => Math.min(100, prev + card.attack));
-      setCorpHP((prev) => Math.max(0, prev - Math.floor(card.attack * 0.8)));
+      setCorpHP((prev) => Math.max(0, prev - Math.floor(card.attack * 0.35)));
       addLog(card.mitre, `${isPlayer ? (gameMode === 'spectator' ? '紅隊 AI' : '玩家') : '對手'}發動 [${card.name}]！滲透進度 +${card.attack}%！`, 'attack');
     } else {
       sound.playDefense();
-      // 藍隊防禦：恢復企業防禦，降低滲透進度
+      // 藍隊防禦：恢復企業防禦，降低滲透進度 (平衡修正：全面具備壓低滲透進度能力)
       setCorpHP((prev) => Math.min(100, prev + card.defense));
       if (card.reduceBreach) {
         setBreachProgress((prev) => Math.max(0, prev - card.reduceBreach));
       }
-      addLog(card.mitre, `${isPlayer ? (gameMode === 'spectator' ? '紅隊 AI' : '玩家') : (gameMode === 'spectator' ? '藍隊 AI' : '對手')}部署 [${card.name}]！修復防禦 +${card.defense} 點！`, 'defense');
+      const reduceText = card.reduceBreach ? `，壓退滲透 -${card.reduceBreach}%` : '';
+      addLog(card.mitre, `${isPlayer ? (gameMode === 'spectator' ? '紅隊 AI' : '玩家') : (gameMode === 'spectator' ? '藍隊 AI' : '對手')}部署 [${card.name}]！修復防禦 +${card.defense} 點${reduceText}！`, 'defense');
     }
 
     // 累積尷尬值 / 尬舞條
@@ -360,16 +361,20 @@ export default function App() {
     addLog('REFEREE', `🚨 白隊總裁判長動用最高裁決權：「不要再打了！要打去練舞室打！」強制開啟尬舞事件！`, 'dance');
   };
 
-  // 檢查勝負判定
+  // 檢查勝負判定 (藍隊大反攻平衡補丁)
   useEffect(() => {
     if (breachProgress >= 100 || corpHP <= 0) {
       sound.playVictory();
       setWinner('red');
       addLog('VICTORY', '🏆 紅隊成功突破邊界並取得金絲雀 Flag，奪得終局勝利！', 'attack');
-    } else if (rounds >= 10 && breachProgress < 50) {
+    } else if ((rounds >= 6 && breachProgress < 45) || (rounds >= 3 && breachProgress <= 0 && corpHP >= 85)) {
       sound.playVictory();
       setWinner('blue');
-      addLog('VICTORY', '🛡️ 藍隊於 10 回合內嚴格壓制滲透，成功維護企業資安！', 'defense');
+      if (breachProgress <= 0) {
+        addLog('VICTORY', '🛡️ 藍隊達成【SOC 絕對封網大勝】！徹底肅清所有 APT 滲透，守護企業核心資產！', 'defense');
+      } else {
+        addLog('VICTORY', '🛡️ 藍隊於第 6 回合內強力壓制紅隊威脅，縱深防禦成功瓦解 APT 攻勢！', 'defense');
+      }
     }
   }, [breachProgress, corpHP, rounds]);
 
@@ -497,7 +502,7 @@ export default function App() {
                   <Flame className="size-3.5" /> 🔴 扮演紅隊 (滲透方)
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  運用 SSRF、依賴毒化與提權，目標突破邊界奪取 Flag！
+                  手握 PHP2Shell (CVE-2026-109618)、SSRF 與提權，突破邊界奪取 Flag！
                 </p>
               </div>
 
@@ -517,7 +522,7 @@ export default function App() {
                   <Shield className="size-3.5" /> 🔵 扮演藍隊 (守備方)
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  部署 WAF 規則、強制 IMDSv2 與 EDR 節點隔離，守護資產！
+                  施展高市流預防性關站、WAF 虛擬補丁與 EDR 隔離，守護資產！
                 </p>
               </div>
 

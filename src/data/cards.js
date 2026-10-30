@@ -13,6 +13,19 @@ export const RED_CARDS = [
     flavor: '「你各位的 API 閘道怎麼還沒關 IMDSv1 啊？」'
   },
   {
+    id: 'red_php2shell',
+    name: 'PHP2Shell 遠端代碼執行',
+    side: 'red',
+    mitre: 'CVE-2026-109618',
+    cost: 2,
+    type: 'attack',
+    attack: 26,
+    defense: 0,
+    danceCharge: 25,
+    description: '觸發 PHP 致命 Use-After-Free 漏洞！免驗證直接遠端 RCE，造成 26 點巨額滲透進度！',
+    flavor: '「大至急！連日本高市早苗都在 X 發推叫大家關站啦！」'
+  },
+  {
     id: 'red_t1078',
     name: '濫用 Wildcard 殘留憑證',
     side: 'red',
@@ -45,10 +58,10 @@ export const RED_CARDS = [
     mitre: 'T1059.004',
     cost: 3,
     type: 'attack',
-    attack: 32,
+    attack: 30,
     defense: 0,
     danceCharge: 30,
-    description: '終極 Payload 發動！造成 32 點巨額滲透進度，極大引爆戰情室尷尬值！',
+    description: '終極 Payload 發動！造成 30 點巨額滲透進度，極大引爆戰情室尷尬值！',
     flavor: '「不要說我沒提醒你，POC 已經在推特傳開了。」'
   },
   {
@@ -90,9 +103,24 @@ export const BLUE_CARDS = [
     type: 'defense',
     attack: 0,
     defense: 18,
+    reduceBreach: 10,
     danceCharge: 15,
-    description: '在 Cloudflare WAF 上線虛擬補丁，恢復 18 點企業防禦血量。',
+    description: '在 Cloudflare WAF 上線虛擬補丁，恢復 18 點防禦並壓低 10% 滲透進度。',
     flavor: '「規則寫得快，資安漏洞追不上我的手速。」'
+  },
+  {
+    id: 'blue_takaichi_shutdown',
+    name: '高市流・預防性關站大絕',
+    side: 'blue',
+    mitre: 'Def-Shutdown',
+    cost: 2,
+    type: 'defense',
+    attack: 0,
+    defense: 25,
+    reduceBreach: 25,
+    danceCharge: 20,
+    description: '響應高市早苗「修不好就關站」大招！直接抹除 25% 滲透進度並修補 25 點防禦！',
+    flavor: '「連高市早苗自己的官網都預防性關閉了，你各位拔線就對了！」'
   },
   {
     id: 'blue_imdsv2',
@@ -103,8 +131,9 @@ export const BLUE_CARDS = [
     type: 'defense',
     attack: 0,
     defense: 22,
+    reduceBreach: 12,
     danceCharge: 15,
-    description: '強制跳轉 Session Token，防禦 SSRF，恢復 22 點企業防禦值。',
+    description: '強制跳轉 Session Token 防禦 SSRF，恢復 22 點防禦並降低 12% 滲透。',
     flavor: '「想偷 Metadata？先問問我的 Hop Limit=1！」'
   },
   {
@@ -116,9 +145,9 @@ export const BLUE_CARDS = [
     type: 'defense',
     attack: 0,
     defense: 26,
+    reduceBreach: 22,
     danceCharge: 20,
-    description: '切斷遭入侵主機之內部路由，大幅降低紅隊 15 點滲透進度。',
-    reduceBreach: 15,
+    description: '切斷遭入侵主機之內部路由，大幅降低紅隊 22 點滲透進度。',
     flavor: '「拔網路線太慢了，直接 API 斷開魂結！」'
   },
   {
@@ -130,8 +159,9 @@ export const BLUE_CARDS = [
     type: 'buff',
     attack: 0,
     defense: 15,
+    reduceBreach: 6,
     danceCharge: 25,
-    description: '誘捕紅隊存取假資料，大幅壓低 MTTD 偵測時間，抽 2 張防禦牌。',
+    description: '誘捕紅隊存取假資料，壓低 6% 滲透，並抽 2 張防禦牌。',
     draw: 2,
     flavor: '「你以為抓到的是核心顧客資料？那是我們的金絲雀！」'
   },
@@ -144,8 +174,9 @@ export const BLUE_CARDS = [
     type: 'defense',
     attack: 0,
     defense: 30,
+    reduceBreach: 8,
     danceCharge: 20,
-    description: '修補 Wildcard IAM Policy，提供 30 點堅強防禦屏障。',
+    description: '修補 Wildcard IAM Policy，提供 30 點堅強防禦屏障並阻退 8% 滲透。',
     flavor: '「從今天起，所有跨部門存取請乖乖填簽呈。」'
   },
   {
@@ -156,9 +187,10 @@ export const BLUE_CARDS = [
     cost: 1,
     type: 'meme',
     attack: 0,
-    defense: 10,
+    defense: 12,
+    reduceBreach: 5,
     danceCharge: 35,
-    description: '資安長在戰情室大喊經典台詞！直接衝高 35% 尬舞值並重整手牌！',
+    description: '資安長在戰情室大喊經典台詞！壓制 5% 滲透，直接衝高 35% 尬舞值！',
     flavor: '「工程師跟紅隊吵得不可開交？全部抓去練舞室！」'
   }
 ];

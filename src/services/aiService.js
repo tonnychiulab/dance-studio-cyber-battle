@@ -7,6 +7,8 @@
 
 // 紅隊幽默駭客垃圾話庫 (離線/降級使用)
 const RED_BANTER_POOL = [
+  '大至急！PHP2Shell (CVE-2026-109618) 已經炸鍋，連高市早苗都在 X 發推叫大家關站啦！',
+  '免驗證 Use-After-Free 直接遠端 RCE，這波你防得住嗎？',
   '連 IMDSv1 都沒關也敢上線？看我直接拉 Token！',
   '這組 IAM 權限竟然開 s3:*，感謝工程師無私贊助！',
   '你的 WAF 規則慢了 30 毫秒，封包早就打進練舞室了。',
@@ -17,6 +19,8 @@ const RED_BANTER_POOL = [
 
 // 藍隊 SOC 資安工程師守備話庫 (離線/降級使用)
 const BLUE_BANTER_POOL = [
+  '響應高市早苗緊急呼籲！修不好我就預防性關站，拔線才是資安最高境界！',
+  '連高市早苗的官網都拔線了，我們的伺服器已經安全離線！',
   'WAF 虛擬補丁已於邊緣生效，你的 Payload 已經被丟棄！',
   '偵測到異常流量，該節點已即刻執行網路微隔離。',
   '想要 SSRF？抱歉我們全站強制開啟 IMDSv2 Session！',
@@ -44,51 +48,52 @@ export function getLocalHeuristicDecision(gameState) {
     // === 紅隊 AI 戰術思維 ===
     // 1. 致命一擊檢查：若能直接使滲透率滿 100% 或使企業 HP 歸零，立刻發動最強終局卡！
     const lethalCards = hand.filter(
-      c => breachProgress + c.attack >= 100 || corpHP - Math.floor(c.attack * 0.8) <= 0
+      c => breachProgress + c.attack >= 100 || corpHP - Math.floor(c.attack * 0.35) <= 0
     );
 
     if (lethalCards.length > 0) {
       selectedCard = lethalCards.sort((a, b) => b.attack - a.attack)[0];
-      tacticalReason = '鎖定致命弱點，發動終局漏洞穿透！';
-    } else if (danceGauge >= 70) {
-      // 2. 尬舞大招誘發：尷尬條偏高時，優先打出迷因煙霧彈引爆白隊裁判
-      const memeCard = hand.find(c => c.danceCharge >= 25 || c.mitre?.startsWith('Meme'));
+      tacticalReason = `鎖定致命弱點，發動終局漏洞穿透【${selectedCard.name}】！`;
+    }
+
+    // 2. 尬舞爆表誘導：若尷尬值超過 70%，優先發動高尬舞值迷因卡，強行召喚白隊裁判！
+    if (!selectedCard && danceGauge >= 70) {
+      const memeCard = hand.find(c => c.danceCharge >= 25);
       if (memeCard) {
         selectedCard = memeCard;
-        tacticalReason = '戰情室過熱，強制誘發白隊裁判進場尬舞！';
+        tacticalReason = `尬舞能量逼近臨界點，引爆練舞室迷因大招【${memeCard.name}】！`;
       }
     }
 
-    // 3. 常態最高輸出原則
+    // 3. 常態輸出：打出當前手牌最高攻擊力者
     if (!selectedCard) {
       const sorted = [...hand].sort((a, b) => b.attack - a.attack);
       selectedCard = sorted[0];
       tacticalReason = `評估權限鏈條，打出最高攻擊力酬載【${selectedCard.name}】`;
     }
-
   } else {
-    // === 藍隊 AI 戰術思維 ===
-    // 1. 高危急迫檢查：若滲透進度高於 65%，全力壓制滲透
-    if (breachProgress >= 65) {
-      const reducer = hand.find(c => c.reduceBreach > 0);
-      if (reducer) {
-        selectedCard = reducer;
-        tacticalReason = `滲透進度達危險水位，部署【${reducer.name}】強力壓低滲透！`;
+    // === 藍隊 AI 戰術思維 (強化版) ===
+    // 1. 滲透威脅壓制：若滲透進度高於 30%，全力打出能降低滲透的防禦牌！
+    if (breachProgress >= 30) {
+      const reducers = hand.filter(c => (c.reduceBreach || 0) > 0).sort((a, b) => (b.reduceBreach || 0) - (a.reduceBreach || 0));
+      if (reducers.length > 0) {
+        selectedCard = reducers[0];
+        tacticalReason = `滲透進度達警告線，部署【${selectedCard.name}】強力壓低滲透 ${selectedCard.reduceBreach}%！`;
       }
     }
 
-    // 2. 血量急救：若 HP 低於 40%，全力加固防禦
-    if (!selectedCard && corpHP <= 40) {
+    // 2. 血量急救：若 HP 低於 45%，全力加固防禦
+    if (!selectedCard && corpHP <= 45) {
       const maxDefense = [...hand].sort((a, b) => b.defense - a.defense)[0];
       selectedCard = maxDefense;
       tacticalReason = `企業防禦告急，上線【${maxDefense.name}】修補邊界防護！`;
     }
 
-    // 3. 常態防禦與過濾
+    // 3. 常態防禦：綜合考慮防禦點數與壓制滲透收益
     if (!selectedCard) {
-      const sorted = [...hand].sort((a, b) => (b.defense + (b.reduceBreach || 0)) - (a.defense + (a.reduceBreach || 0)));
+      const sorted = [...hand].sort((a, b) => (b.defense + (b.reduceBreach || 0) * 1.5) - (a.defense + (a.reduceBreach || 0) * 1.5));
       selectedCard = sorted[0];
-      tacticalReason = `維持縱深防禦，打出最佳防禦卡【${selectedCard.name}】`;
+      tacticalReason = `維持縱深防禦，打出最佳綜合防禦卡【${selectedCard.name}】`;
     }
   }
 
@@ -138,9 +143,8 @@ export async function getAIDecision(gameState) {
       }
     }
   } catch (err) {
-    // 靜默降級（網路未通、離線或額度耗盡皆平滑切換）
+    // 網絡故障、超時或離線，靜默平滑降級至本地啟發式引擎
   }
 
-  // 兜底執行本地啟發式決策
   return getLocalHeuristicDecision(gameState);
 }
