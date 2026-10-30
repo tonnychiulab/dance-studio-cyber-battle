@@ -32,8 +32,8 @@ export default function SpectatorControls({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-3 px-4 select-none font-mono">
-      <div className="bg-slate-900/90 border-2 border-purple-500/70 neon-border-purple rounded-2xl p-3 sm:p-4 backdrop-blur-md shadow-2xl flex flex-wrap items-center justify-between gap-3">
+    <div className="w-full max-w-4xl mx-auto mb-1 px-2 select-none font-mono shrink-0">
+      <div className="bg-slate-900/90 border border-purple-500/70 neon-border-purple rounded-xl p-2 sm:p-2.5 backdrop-blur-md shadow-lg flex flex-wrap items-center justify-between gap-2">
         {/* 裁判狀態指示器 */}
         <div className="flex items-center gap-2.5">
           <div className="size-9 rounded-xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.4)]">

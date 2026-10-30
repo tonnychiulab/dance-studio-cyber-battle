@@ -132,4 +132,25 @@ test.describe('「要打去練舞室打」全功能端到端 (E2E) 測試', () =
     await expect(speedBtn).toContainText('2x');
   });
 
+  test('Wazuh 底部事件抽屜：點擊與鍵盤 [L] 鍵展開收合切換', async ({ page }) => {
+    await page.goto('/');
+    await page.getByText('🔴 扮演紅隊 (滲透方)').click();
+    await page.getByRole('button', { name: /開始戰情室對抗/ }).click();
+
+    const terminal = page.locator('aside');
+    await expect(terminal).toBeVisible();
+
+    // 點擊收合面板
+    const collapseBtn = page.getByRole('button', { name: '收合資安日誌面板' });
+    await collapseBtn.click();
+
+    // 驗證按鈕文字切換為展開
+    const expandBtn = page.getByRole('button', { name: /展開資安日誌面板/ });
+    await expect(expandBtn).toBeVisible();
+
+    // 鍵盤按下 L 鍵切換展開
+    await page.keyboard.press('KeyL');
+    await expect(collapseBtn).toBeVisible();
+  });
+
 });

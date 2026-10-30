@@ -19,6 +19,9 @@ export default function App() {
   const [muted, setMuted] = useState(false);
   const [aiEngineName, setAiEngineName] = useState('⚡ Cloudflare Workers AI');
 
+  // Wazuh SOC 底部事件抽屜展開/收合狀態 (預設展開)
+  const [isLogCollapsed, setIsLogCollapsed] = useState(false);
+
   // 觀戰模式控制狀態 (AI vs AI 白隊裁判)
   const [currentTurnSide, setCurrentTurnSide] = useState('red'); // 'red' | 'blue'
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -377,6 +380,12 @@ export default function App() {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
+      if (e.key === 'l' || e.key === 'L') {
+        e.preventDefault();
+        setIsLogCollapsed((prev) => !prev);
+        return;
+      }
+
       if (gameMode === 'spectator') {
         if (e.code === 'Space') {
           e.preventDefault();
@@ -441,54 +450,54 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-mono relative overflow-hidden crt-overlay bg-cyber-grid">
-      {/* 遊戲未啟動：歡迎與模式選擇畫面 (Frontend Design 典範設計) */}
+    <div className="h-screen max-h-screen overflow-hidden bg-slate-950 text-slate-100 flex flex-col font-mono relative crt-overlay bg-cyber-grid">
+      {/* 遊戲未啟動：歡迎與模式選擇畫面 (可捲動以適應各類視窗) */}
       {!gameStarted ? (
-        <main className="flex-1 flex items-center justify-center p-4">
-          <div className="max-w-3xl w-full bg-gradient-to-b from-slate-900/95 via-slate-950 to-black border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-10 shadow-2xl text-center relative overflow-hidden backdrop-blur-md">
+        <main className="flex-1 overflow-y-auto flex items-center justify-center p-4">
+          <div className="max-w-3xl w-full bg-gradient-to-b from-slate-900/95 via-slate-950 to-black border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl text-center relative overflow-hidden backdrop-blur-md my-auto">
             {/* 裝飾背景柔光 */}
             <div className="absolute -top-32 -left-32 size-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-32 -right-32 size-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
             {/* 頂部動態 Emoji 徽章 */}
-            <div className="size-20 mx-auto rounded-3xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-4xl mb-4 shadow-[0_0_35px_rgba(16,185,129,0.3)] animate-pulse select-none">
+            <div className="size-16 sm:size-20 mx-auto rounded-3xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-3xl sm:text-4xl mb-3 shadow-[0_0_35px_rgba(16,185,129,0.3)] animate-pulse select-none">
               💃
             </div>
 
-            <span className="text-[11px] px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold uppercase tracking-widest shadow-sm">
+            <span className="text-[10px] sm:text-[11px] px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold uppercase tracking-widest shadow-sm">
               MITRE ATT&CK × 紫禁之巔經典迷因
             </span>
 
-            <h1 className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-300 to-rose-400 mt-4 mb-2 tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-300 to-rose-400 mt-3 mb-1 tracking-tight">
               「要打去練舞室打」
             </h1>
-            <p className="text-base sm:text-lg text-rose-400 font-black mb-5 tracking-wide">
+            <p className="text-sm sm:text-base text-rose-400 font-black mb-4 tracking-wide">
               之紅藍對抗篇 (Dance Studio Cyber Battle)
             </p>
 
-            <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto leading-relaxed mb-7">
-              實時 APT 滲透與 Cloudflare 邊緣防禦的世紀對決！搭載 Cloudflare Workers AI 免費邊緣模型推論。支援玩家攻防或雙 AI 全自動觀戰對決。
+            <p className="text-xs text-slate-400 max-w-xl mx-auto leading-relaxed mb-5">
+              實時 APT 滲透與 Cloudflare 邊緣防禦的世紀對決！搭載 Cloudflare Workers AI 邊緣神經網路。支援紅藍攻防與全自動觀戰模式。
             </p>
 
-            {/* 三種對戰模式卡片 (Emil 物理反饋與無障礙單選) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 mb-6 text-left">
+            {/* 三種對戰模式卡片 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5 text-left">
               <div
                 role="button"
                 tabIndex={0}
                 aria-pressed={playerSide === 'red'}
                 onClick={() => setPlayerSide('red')}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPlayerSide('red'); } }}
-                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-rose-500 ${
+                className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-rose-500 ${
                   playerSide === 'red'
                     ? 'bg-rose-950/50 border-rose-500 neon-border-red shadow-xl'
                     : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
                 }`}
               >
-                <div className="flex items-center gap-2 text-rose-400 font-black text-sm mb-1.5">
-                  <Flame className="size-4" /> 🔴 扮演紅隊 (滲透方)
+                <div className="flex items-center gap-1.5 text-rose-400 font-black text-xs mb-1">
+                  <Flame className="size-3.5" /> 🔴 扮演紅隊 (滲透方)
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  運用 SSRF、依賴毒化與 IAM Wildcard 提權，目標突破邊界奪取 Flag！
+                  運用 SSRF、依賴毒化與提權，目標突破邊界奪取 Flag！
                 </p>
               </div>
 
@@ -498,17 +507,17 @@ export default function App() {
                 aria-pressed={playerSide === 'blue'}
                 onClick={() => setPlayerSide('blue')}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPlayerSide('blue'); } }}
-                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-sky-500 ${
+                className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-sky-500 ${
                   playerSide === 'blue'
                     ? 'bg-sky-950/50 border-sky-500 neon-border-blue shadow-xl'
                     : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
                 }`}
               >
-                <div className="flex items-center gap-2 text-sky-400 font-black text-sm mb-1.5">
-                  <Shield className="size-4" /> 🔵 扮演藍隊 (守備方)
+                <div className="flex items-center gap-1.5 text-sky-400 font-black text-xs mb-1">
+                  <Shield className="size-3.5" /> 🔵 扮演藍隊 (守備方)
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  部署 WAF 規則、強制 IMDSv2 與 EDR 節點隔離，守護企業核心資產！
+                  部署 WAF 規則、強制 IMDSv2 與 EDR 節點隔離，守護資產！
                 </p>
               </div>
 
@@ -518,36 +527,38 @@ export default function App() {
                 aria-pressed={playerSide === 'spectator'}
                 onClick={() => setPlayerSide('spectator')}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPlayerSide('spectator'); } }}
-                className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-purple-500 ${
+                className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-purple-500 ${
                   playerSide === 'spectator'
                     ? 'bg-purple-950/50 border-purple-400 neon-border-purple shadow-xl'
                     : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
                 }`}
               >
-                <div className="flex items-center gap-2 text-purple-300 font-black text-sm mb-1.5">
-                  <Eye className="size-4" /> 👁️ 白隊總裁判 (全自動)
+                <div className="flex items-center gap-1.5 text-purple-300 font-black text-xs mb-1">
+                  <Eye className="size-3.5" /> 👁️ 白隊總裁判 (全自動)
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  雙 AI 自主邊緣神經推論對抗！裁判掌控暫停、倍速與「強制練舞室」干預特權。
+                  雙 AI 邊緣神經自主攻防！裁判掌控暫停與「強制練舞室」特權。
                 </p>
               </div>
             </div>
 
             {/* 鍵盤快捷鍵指示提示 */}
-            <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-500 mb-6 font-mono">
+            <div className="flex flex-wrap items-center justify-center gap-2.5 text-[11px] text-slate-500 mb-5 font-mono">
               <span className="flex items-center gap-1">
-                <Keyboard className="size-3.5" /> 鍵盤熱鍵支援：
+                <Keyboard className="size-3.5" /> 熱鍵提示：
               </span>
               {playerSide === 'spectator' ? (
                 <>
                   <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">Space 播放/暫停</span>
                   <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">N 單步推進</span>
                   <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">D 強制尬舞</span>
+                  <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-purple-300 font-bold">L 收合日誌</span>
                 </>
               ) : (
                 <>
                   <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-bold">1-4 出牌</span>
                   <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-bold">Space 結束回合</span>
+                  <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 font-bold">L 收合日誌</span>
                 </>
               )}
             </div>
@@ -555,7 +566,7 @@ export default function App() {
             {/* 開始戰鬥按鈕 */}
             <button
               onClick={() => startNewGame(playerSide, playerSide === 'spectator' ? 'spectator' : 'pve')}
-              className={`w-full py-4 rounded-2xl font-black text-base tracking-wider shadow-xl transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 mb-3 ${
+              className={`w-full py-3.5 rounded-2xl font-black text-sm sm:text-base tracking-wider shadow-xl transition-all duration-150 active:scale-[0.97] flex items-center justify-center gap-2 cursor-pointer focus-visible:ring-2 mb-2.5 ${
                 playerSide === 'spectator'
                   ? 'bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white shadow-purple-500/30 focus-visible:ring-purple-400'
                   : 'bg-gradient-to-r from-emerald-500 via-cyan-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-emerald-500/30 focus-visible:ring-emerald-400'
@@ -577,15 +588,16 @@ export default function App() {
               href="https://dance-studio-cyber-battle.tw365ai.workers.dev/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-orange-950/30 hover:bg-orange-950/50 border border-orange-500/40 text-orange-300 hover:text-orange-200 text-xs font-bold font-mono transition-all duration-150 active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-2 w-full py-2 rounded-xl bg-orange-950/30 hover:bg-orange-950/50 border border-orange-500/40 text-orange-300 hover:text-orange-200 text-xs font-bold font-mono transition-all duration-150 active:scale-[0.98]"
             >
               ☁️ 連線至 Cloudflare 邊緣主節點 (Workers AI 支援) ↗
             </a>
           </div>
         </main>
       ) : (
-        /* 遊戲進行中：主對戰介面 */
-        <>
+        /* 遊戲進行中：Wazuh 一屏全覽戰情中心 (100vh Viewport-Locked, 零垂直捲動) */
+        <div className="flex-1 min-h-0 flex flex-col justify-between overflow-hidden">
+          {/* Wazuh 頂部全域遙測列 */}
           <Header
             corpHP={corpHP}
             breachProgress={breachProgress}
@@ -597,9 +609,9 @@ export default function App() {
             aiEngine={aiEngineName}
           />
 
-          {/* 觀戰模式專屬：白隊總裁判懸浮控制台 */}
+          {/* 觀戰模式專屬：白隊總裁判控制台 */}
           {gameMode === 'spectator' && (
-            <div className="pt-2">
+            <div className="px-2 pt-1">
               <SpectatorControls
                 isPlaying={isAutoPlaying}
                 onTogglePlay={() => setIsAutoPlaying((prev) => !prev)}
@@ -615,7 +627,8 @@ export default function App() {
             </div>
           )}
 
-          <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 max-w-7xl mx-auto w-full">
+          {/* 中央主要對戰大廳 (Center Stage) */}
+          <main className="flex-1 min-h-0 overflow-hidden flex flex-col px-3 py-1">
             <GameBoard
               playerSide={playerSide}
               playerHand={playerHand}
@@ -630,12 +643,15 @@ export default function App() {
               gameMode={gameMode}
               currentTurnSide={currentTurnSide}
             />
-
-            <div className="w-full lg:w-88 shrink-0">
-              <TerminalLog logs={logs} />
-            </div>
           </main>
-        </>
+
+          {/* 底部 Wazuh SOC 資安事件抽屜 (可收合/展開) */}
+          <TerminalLog
+            logs={logs}
+            isCollapsed={isLogCollapsed}
+            onToggleCollapse={() => setIsLogCollapsed((prev) => !prev)}
+          />
+        </div>
       )}
 
       {/* 練舞室大招彈窗 */}
