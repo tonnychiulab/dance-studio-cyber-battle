@@ -6,19 +6,23 @@
   }
 }
 
-/* 戰情室 CRT 掃描線微光特效 */
-.crt-overlay {
+/* 戰情室 CRT 掃描線微光特效（使用偽元素置頂，並確保絕不阻擋點擊） */
+.crt-overlay::before {
+  content: "";
+  position: fixed;
+  inset: 0;
   background: linear-gradient(
     rgba(18, 16, 16, 0) 50%, 
-    rgba(0, 0, 0, 0.25) 50%
+    rgba(0, 0, 0, 0.2) 50%
   ), linear-gradient(
     90deg,
-    rgba(255, 0, 0, 0.03),
+    rgba(255, 0, 0, 0.02),
     rgba(0, 255, 0, 0.01),
-    rgba(0, 0, 255, 0.03)
+    rgba(0, 0, 255, 0.02)
   );
   background-size: 100% 3px, 6px 100%;
-  pointer-events: none;
+  pointer-events: none !important;
+  z-index: 9999;
 }
 
 /* 霓虹發光邊框 */
