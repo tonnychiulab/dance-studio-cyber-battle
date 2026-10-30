@@ -1,8 +1,21 @@
 # 「要打去練舞室打」之紅藍對抗篇 💃⚔️
 *(Cyber Dance Studio: Red vs. Blue Battle)*
 
+[![Cloudflare Security Audit](https://img.shields.io/badge/Cloudflare_Security-Audit_Passed-10B981?style=flat-square&logo=cloudflare)](docs/CLOUDFLARE_SECURITY_AUDIT.md)
+[![Vulnerabilities](https://img.shields.io/badge/vulnerabilities-0_confirmed-brightgreen?style=flat-square)](docs/CLOUDFLARE_SECURITY_AUDIT.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+
 > **「住手！你們住手！不要再打了！你們要打去練舞室打！！！」**  
 > 一款將臺灣經典偶像劇《紫禁之巔》迷因與企業真實 **MITRE ATT&CK 紅藍資安攻防** 完美結合的回合制卡牌策略對決網頁遊戲！
+
+---
+
+## 🛡️ Cloudflare 資安稽核認證 (Security Audit Status)
+
+本專案已通過遵循 [Cloudflare security-audit-skill](https://github.com/cloudflare/security-audit-skill) 標準之防禦型原始碼資安審查：
+- **安全性評級**：**A (卓越 / 0 Confirmed Vulnerabilities)**
+- **邊緣防禦**：全面注入 Cloudflare `_headers` 安全標頭（嚴格 CSP、HSTS、`X-Frame-Options: DENY` 防點擊劫持）。
+- **完整審查報告**：請參閱 [Cloudflare 資安審查報告 (docs/CLOUDFLARE_SECURITY_AUDIT.md)](docs/CLOUDFLARE_SECURITY_AUDIT.md)。
 
 ---
 
